@@ -1,6 +1,11 @@
 # stormforge-armory-api
 Example using stormforge armory API.
 
+### Disclaimer:
+```
+I am not in any way employed by or associated with StormForge (other than being a player on their servers). This code is not endorsed or reviewed by staff from StormForge and has received no endorsement from any of their staff. This is simply an example of using the API provided by them. If you have issues with the API, reach out to StormForge.  If you have issues with the code in this repo, you can report those here on GitHub. The StormForge staff will not provide you with any sort of help with this third-party code.
+```
+
 To start, you'll need to visit the stormforge site and login and go [here](https://stormforge.gg/en/account#apikey).
 
 Get your **secret** and **API key** and put them in the api.php file.
