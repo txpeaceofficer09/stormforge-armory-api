@@ -1,0 +1,57 @@
+.overlay {
+        background: rgba(0, 0, 0, 0.5);
+	z-index: 10000;
+}
+
+#guild-emblem {
+	width: 150px;
+	height: 145px;
+}
+
+.wow-icon {
+	height: 24px;
+	width: 24px;
+	object-fit: contain;
+	border-radius: 25%;
+	background-clip: border-box;
+	border: 2px solid #cccccc;
+}
+
+.progress-bar-container {
+	border: 2px solid #cccccc;
+	background-clip: border-box;
+	border-radius: 25px;
+	background: linear-gradient(1800deg, #333333, #606060);
+}
+
+.bar-Exalted {
+	background: linear-gradient(0deg, #66aaff, #aaddff);
+}
+
+.bar-Revered {
+	background: linear-gradient(0deg, #0000aa, #0000ff);
+}
+
+.bar-Honored {
+	background: linear-gradient(0deg, #006600, #00aa00);
+}
+
+.bar-Friendly {
+	background: linear-gradient(0deg, #00aa00, #00ff00);
+}
+
+.bar-Neutral {
+	background: linear-gradient(0deg, #aa6600, #aaaa00);
+}
+
+.bar-Hostile {
+	background: linear-gradient(0deg, #aa0000, #ff0000);
+}
+
+.bar-Hated {
+	background: linear-gradient(0deg, #660000, #aa0000);
+}
+
+.progress-bar-text {
+	text-shadow: 1px 1px #000000;
+}
