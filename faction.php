@@ -3,8 +3,8 @@
 $name = !empty($_REQUEST['name']) ? $_REQUEST['name'] : '';
 
 if ( !empty($name) ) {
-	if ( !file_exists("img/{$name}.png") ) {
-		if ( $fp=fopen("img/{$name}.png", 'w') ) {
+	if ( !file_exists("images/{$name}.png") ) {
+		if ( $fp=fopen("images/{$name}.png", 'w') ) {
 			fputs($fp, join('', file("https://wow.zamimg.com/images/icons/{$name}.png")));
 			fclose($fp);
 		}
@@ -12,6 +12,6 @@ if ( !empty($name) ) {
 }
 
 header("Content-Type: image/png");
-echo file_get_contents("img/{$name}.png");
+echo file_get_contents("images/{$name}.png");
 
 ?>
