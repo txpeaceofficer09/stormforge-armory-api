@@ -1,6 +1,7 @@
 <?php
 
 $name = !empty($_REQUEST['name']) ? $_REQUEST['name'] : '';
+if ( preg_match("/\.png$/i", $name) ) $name = substr($name, 0, stripos($name, "."));
 $src = "https://static.tauri.hu/images/icons/large/{$name}.png";
 $filename = "images/{$name}.png";
 
