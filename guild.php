@@ -32,7 +32,7 @@ $guild = !empty($_REQUEST['guild']) ? $_REQUEST['guild'] : 'Oceanica';
 				</div>
 			</div>
 
-			<ul id="classList" class="nav"></ul>
+			<ul id="classList" class="nav justify-content-between"></ul>
 
 			<div class="table-responsive">
 				<table class="table table-striped">
