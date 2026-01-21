@@ -17,6 +17,13 @@
 	border: 2px solid #cccccc;
 }
 
+.wow-coin-icon {
+	height: 14px;
+	width: 14px;
+	object-fit: contain;
+	vertical-align: baseline;
+}
+
 .progress-bar-container {
 	border: 2px solid #cccccc;
 	background-clip: border-box;
