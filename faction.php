@@ -2,6 +2,8 @@
 
 $name = !empty($_REQUEST['name']) ? $_REQUEST['name'] : '';
 
+if ( !is_dir("images") ) mkdir("images", 755);
+
 if ( !empty($name) ) {
 	if ( !file_exists("images/{$name}.png") ) {
 		if ( $fp=fopen("images/{$name}.png", 'w') ) {

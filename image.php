@@ -1,7 +1,6 @@
 <?php
 
 $name = !empty($_REQUEST['name']) ? $_REQUEST['name'] : '';
-if ( preg_match("/\.[\w]{3,3}$/i", $name) ) $name = substr($name, 0, stripos($name, "."));
 $src = "https://static.tauri.hu/images/icons/large/{$name}.png";
 $filename = "images/{$name}.png";
 
@@ -17,6 +16,8 @@ if ( !empty($name) && !file_exists($filename) ) {
 if ( file_exists($filename) ) {
 	header("Content-Type: image/png");
 	echo file_get_contents($filename);
+} else {
+	print_r($_REQUEST);
 }
 
 ?>

@@ -13,6 +13,19 @@ const classMap = {
 	11: 'Druid'
 };
 
+const classIcons = {
+	1: 'ability_warrior_offensivestance',
+	2: 'ability_paladin_shieldofthetemplar',
+	3: 'ability_hunter_beasttaming',
+	4: 'ability_rogue_shadowstep',
+	5: 'spell_holy_holybolt',
+	6: 'spell_deathknight_classicon',
+	7: 'spell_nature_bloodlust',
+	8: 'ability_mage_arcanebarrage',
+	9: 'spell_nature_faeriefire',
+	11: 'ability_druid_maul',
+}
+
 const raceMap = {
 	1: "Human",
 	2: "Orc",
@@ -178,7 +191,7 @@ async function getGuildMoney(realmName, guildName) {
 				$('#gmotd').html('Guild Message of the Day: ' + gmotd);
 				$('#ginfo').html(ginfo);
 
-				$('#money').html(`Guild Bank Funds: ${gold}<img src="img/gold.webp"> ${silver}<img src="img/silver.webp"> ${copper}<img src="img/copper.webp">`);
+				$('#money').html(`Guild Bank Funds: ${gold}<img src="image.php?name=inv_misc_coin_01" class="wow-coin-icon"> ${silver}<img src="image.php?name=inv_misc_coin_03" class="wow-coin-icon"> ${copper}<img src="image.php?name=inv_misc_coin_05" class="wow-coin-icon">`);
 			} else {
 				console.error("API Error: " + data.errorstring);
 			}
@@ -205,7 +218,7 @@ async function getCharacterData(realmName, characterName, faction, rank) {
 		success: function(data) {
 			if (data.success) {
 				const name = data.response.tname || data.response.name;
-				const classIcon = '<img class="wow-icon" src="img/' + classMap[data.response.class].toLowerCase().replace(/\s+/g, '') + '.gif" title="' + classMap[data.response.class] + '">' || '';
+				const classIcon = '<img class="wow-icon" src="image.php?name=' + classIcons[data.response.class] + '" title="' + classMap[data.response.class] + '">' || '';
 				const raceIcon = '<img class="wow-icon" title="' + genderMap[data.response.gender] + ' ' + raceMap[data.response.race] + '" src="race.php?img=race_' + raceMap[data.response.race].toLowerCase().replace(/undead/g, "scourge").replace(/\s+/g, "") + '_' + genderMap[data.response.gender].toLowerCase() + '.jpg">';
 				const factionIcon = '<img class="wow-icon" title="' + factionMap[faction] + '" src="faction.php?name=' + factionMap[faction].toLowerCase() + '" />' || '';
 				const level = data.response.level || '';
@@ -225,10 +238,7 @@ async function getCharacterData(realmName, characterName, faction, rank) {
 
 					if (prof && prof.name) {
 						const margin = num - 1;
-						// const cleanName = prof.name.toLowerCase().replace(/\s+/g, "");
-						// const iconUrl = `https://wow.zamimg.com/images/wow/icons/small/ui_profession_${cleanName}.jpg`;
 						const titleText = `${prof.value} / ${prof.max} ${prof.name}`;
-						// professions += `<img src="${iconUrl}" class="wow-icon ms-${margin}" title="${titleText}"><span class="d-none">${prof.name}</span>`;
 						professions += `<img src="image.php?name=${prof.icon}" class="wow-icon ms-${margin}" title="${titleText}"><span class="d-none">${prof.name}</span>`;
 					}
 				});
@@ -243,8 +253,6 @@ async function getCharacterData(realmName, characterName, faction, rank) {
 						if ( specName == "Feral Combat" && Number(data.response[`talents_${num}`].charAt(32)) > 0 ) {
 							specName = "Guardian";
 						}
-						// talents += '<span class="d-none">' + specName + '</span><img src="' + classMap[data.response.class].toLowerCase().replace(/\s+/g, '') + '_' + specName.toLowerCase().replace(/\s+/g, '') + '.jpg" height="24" class="ms-' + num + '" title="' + specName + ' (' + specBuild + ')">';
-						// talents += '<span class="d-none">' + specName + '</span><img src="spec.php?class=' + classMap[data.response.class].toLowerCase().replace(/\s+/g, '') + '&spec=' + specName.toLowerCase().replace(/\s+/g, '') + '" height="24" class="ms-' + num + '" title="' + specName + ' (' + specBuild + ')">';
 						talents += '<span class="d-none">' + specName + '</span><img src="image.php?name=' + data.response[`treeIcon_${num}`] + '" class="wow-icon ms-' + num + '" title="' + specName + ' (' + specBuild + ')">';
 					}
 				});
@@ -252,7 +260,6 @@ async function getCharacterData(realmName, characterName, faction, rank) {
 				getCharacterAchievements(realmName, characterName);
 
 				$('tbody').append('<tr><td>' + factionIcon + '</td><td>' + raceIcon + '<span class="d-none">' + genderMap[data.response.gender] + '</span><span class="d-none">' + raceMap[data.response.race] + '</span></td><td>' + classIcon + '<span class="d-none">' + classMap[data.response.class] + '</span></td><td><a href="https://logs.stormforge.gg/en/character/' + realmName + '/' + data.response.name + '" target="_new">' + name + '</a></td><td>' + level + '</td><td>' + ilvl + '</td><td>' + gearscore + '</td><td>' + talents + '</td><td>' + hk + '</td><td class="text-nowrap">' + professions + '</td><td>' + guildRank + '</td><td id="' + characterName + '_AchievementPoints"></td></tr>');
-				// $('tbody').append('<tr><td>' + factionIcon + '</td><td>' + raceIcon + '<span class="d-none">' + genderMap[data.response.gender] + '</span><span class="d-none">' + raceMap[data.response.race] + '</span></td><td>' + classIcon + '<span class="d-none">' + classMap[data.response.class] + '</span></td><td><a href="https://logs.stormforge.gg/en/character/' + realmName + '/' + data.response.name + '" target="_new">' + name + '</a></td><td>' + level + '</td><td>' + ilvl + '</td><td>' + gearscore + '</td><td>' + talents + '</td><td>' + hk + '</td><td class="text-nowrap">' + professions + '</td><td>' + guildRank + '</td><td>' + points + '</td></tr>');
 			} else {
 				console.error("API Error: " + data.errorstring);
 			}
