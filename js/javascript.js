@@ -77,6 +77,50 @@ async function filterList(value) {
 	});
 }
 
+async function getCharacterItems(realmName, characterName) {
+	$.ajax({
+		url: 'api.php',
+		type: 'POST',
+		data: {
+			url: 'character-sheet',
+			params: {
+				r: realmName,
+				n: characterName
+			}
+		},
+		dataType: 'json',
+		beforeSend: function() {
+			$('.overlay').removeClass('d-none').addClass('d-flex');
+		},
+		success: function(data) {
+			if ( data.success ) {
+				const gearList = data.response.characterItems;
+				const name = data.response.tname ?? data.response.name
+
+				$('h2').text(`${name} <${data.response.guildName}>`);
+				$('#playerData').text(`Level ${data.response.level} ${genderMap[data.response.gender]} ${raceMap[data.response.race]} ${classMap[data.response.class]}`);
+
+				$.each(gearList, function(index, item) {
+					if ( item.entry !== 0 ) {
+						$('tbody').append('<tr><td><img src="image.php?name=' + item.icon + '" class="wow-icon border-quality-' + item.rarity + '"></td><td>' + item.name + '</td><td>' + item.ilevel + '</td><td>' + item.itemscore_335 + '</td></tr>');
+					}
+				});
+
+				$('table').append('<tfoot><tr><td>&nbsp;</td><th class="text-end">Total</th><td>' + data.response.avgitemlevel + '</td><td>' + data.response.gearscore_335 + '</td></tr></tfoot>')
+			} else {
+				console.error("API Error: " + data.errorstring);
+			}
+		},
+		error: function(xhr) {
+			console.error("Connection Error: " + xhr.status);
+		},
+		complete: function() {
+			$('.overlay').addClass('d-none').removeClass('d-flex');
+		}
+
+	});
+}
+
 async function getCharacterReputations(realmName, characterName) {
 	$.ajax({
 		url: 'api.php',
@@ -123,13 +167,15 @@ async function getCharacterReputations(realmName, characterName) {
 				});
 
 				tbody.append(rows); // Put them back all at once
-				$('.overlay').addClass('d-none').removeClass('d-flex');
 			} else {
 				console.error("API Error: " + data.errorstring);
 			}
 		},
 		error: function(xhr) {
 			console.error("Connection Error: " + xhr.status);
+		},
+		complete: function() {
+			$('.overlay').addClass('d-none').removeClass('d-flex');
 		}
 	});
 }
