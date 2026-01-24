@@ -1,8 +1,14 @@
 <?php
 
 $name = !empty($_REQUEST['name']) ? $_REQUEST['name'] : 'inv_misc_questionmark';
-$src = "https://static.tauri.hu/images/icons/large/{$name}.png";
-$filename = "images/{$name}.png";
+
+if ( preg_match('/\.png/i', $name) ) {
+	$src = "https://static.tauri.hu/images/icons/large/{$name}";
+	$filename = "images/{$name}";
+} else {
+	$src = "https://static.tauri.hu/images/icons/large/{$name}.png";
+	$filename = "images/{$name}.png";
+}
 
 if ( !is_dir("images/") ) mkdir("images/", 0755);
 
