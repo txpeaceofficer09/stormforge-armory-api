@@ -56,6 +56,8 @@ $guild = !empty($_REQUEST['guild']) ? $_REQUEST['guild'] : 'Oceanica';
 				</table>
 			</div>
 
+			<div class="overlay position-fixed top-0 start-0 w-100 h-100 justify-content-center align-items-center d-none"><div class="content-box"><span class="loader me-2"></span>Loading...</div></div>
+
 <script src="js/javascript.js"></script>
 <script>
 
