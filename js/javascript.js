@@ -1,4 +1,31 @@
 let guildMembers = 0;
+let itemsData = {};
+let items = [];
+
+let repFactionMap = {
+	1119: "The Sons of Hodir",
+	1098: "Knights of the Ebon Blade",
+	1106: "Argent Crusade",
+	1091: "The Wyrmrest Accord",
+	1090: "Kirin Tor"
+};
+
+const statTypeMap = {
+	0: "Mana",
+	1: "Health",
+	3: "Agility",
+	4: "Strength",
+	5: "Intellect",
+	6: "Spirit",
+	7: "Stamina",
+	13: "Dodge Rating",
+	14: "Parry Rating",
+	31: "Hit Rating",
+	32: "Critical Strike Rating",
+	36: "Haste Rating",
+	38: "Attack Power",
+	45: "Spell Power"
+}
 
 const classMap = {
 	1: 'Warrior',
@@ -59,6 +86,65 @@ const rankMap = {
 	5: "5 - Initiate"
 };
 
+const reputationMap = {
+	0: "Hated",
+	1: "Hostile",
+	2: "Unfriendly",
+	3: "Neutral",
+	4: "Friendly",
+	5: "Honored",
+	6: "Revered",
+	7: "Exalted"
+};
+
+const tierMap = {
+	// TIER 1 (Molten Core)
+	"Might": 1, "Nightslayer": 1, "Giantstalker": 1, "Cenarion": 1, "Earthfury": 1,
+	"Arcanist": 1, "Prophecy": 1, "Felheart": 1, "Lawbringer": 1,
+
+	// TIER 2 (Blackwing Lair)
+	"Wrath": 2, "Bloodfang": 2, "Dragonstalker": 2, "Stormrage": 2, "Ten Storms": 2,
+	"Netherwind": 2, "Transcendence": 2, "Nemesis": 2, "Judgement": 2,
+
+	// TIER 3 (Original Naxxramas - often shares names with T7)
+	// Note: If you are strictly WotLK, T3 is usually inaccessible, but names are:
+	// Dreadnaught, Bonescythe, Cryptstalker, Dreamwalker, Earthshatter, 
+	// Frostfire, Faith, Plagueheart, Redemption.
+
+	// TIER 4 (Karazhan / Gruul / Magtheridon)
+	"Warbringer": 4, "Netherblade": 4, "Demon Stalker": 4, "Malorne": 4, "Cyclone": 4,
+	"Aldor": 4, "Incarnate": 4, "Voidheart": 4, "Justicar": 4,
+
+	// TIER 5 (SSC / The Eye)
+	"Destroyer": 5, "Deathmantle": 5, "Rift Stalker": 5, "Nordrassil": 5, "Cataclysm": 5,
+	"Tirisfal": 5, "Avatar": 5, "Corruptor": 5, "Crystalforge": 5,
+
+	// TIER 6 (Hyjal / BT / Sunwell)
+	"Onslaught": 6, "Slayer": 6, "Gronnstalker": 6, "Thunderheart": 6, "Skyshatter": 6,
+	"Tempest": 6, "Absolution": 6, "Malefic": 6, "Lightbringer": 6,
+
+	// TIER 7 (WotLK: Naxxramas / Obsidian Sanctum)
+	"Dreadnaught": 7, "Scourgeborne": 7, "Redemption": 7, "Cryptstalker": 7,
+	"Earthshatter": 7, "Bonescythe": 7, "Dreamwalker": 7, "Frostfire": 7,
+	"Faith": 7, "Plagueheart": 7,
+
+	// TIER 8 (WotLK: Ulduar)
+	"Siegebreaker": 8, "Darkruned": 8, "Aegis": 8, "Scourgestalker": 8,
+	"Worldbreaker": 8, "Terrorblade": 8, "Nightsong": 8, "Kirin Tor": 8,
+	"Sanctification": 8, "Deathbringer": 8,
+
+	// TIER 9 (WotLK: Trial of the Crusader - Alliance / Horde)
+	"Wrynn": 9, "Hellscream": 9, "Thassarian": 9, "Koltira": 9, "Turalyon": 9,
+	"Liadrin": 9, "Windrunner": 9, "Nobundo": 9, "Thrall": 9, "VanCleef": 9,
+	"Garona": 9, "Malfurion": 9, "Hamuul": 9, "Khadgar": 9, "Sunstrider": 9,
+	"Velen": 9, "Zabra": 9, "Gul'dan": 9, "Kel'Thuzad": 9,
+
+	// TIER 10 (WotLK: Icecrown Citadel)
+	"Ymirjar Lord": 10, "Scourgelord": 10, "Lightsworn": 10, "Ahn'Kahar Blood Hunter": 10,
+	"Frost Witch": 10, "Shadowblade": 10, "Lasherweave": 10, "Bloodmage": 10,
+	"Crimson Acolyte": 10, "Dark Coven": 10
+};
+
 $('#search').on('keyup', function() {
 	var value = $(this).val().toLowerCase();
 
@@ -77,10 +163,280 @@ async function filterList(value) {
 	});
 }
 
-async function getCharacterItems(realmName, characterName) {
+function formatWoWMoney(totalCopper) {
+	// if ( totalCopper == 0 ) return "0c";
+
+	const gold = Math.floor(totalCopper / 10000);
+	const silver = Math.floor((totalCopper % 10000) / 100);
+	const copper = totalCopper % 100;
+
+	let result = [];
+	if ( gold > 0 ) result.push(`<span class="gold">${gold}</span>`);
+	if ( silver > 0 ) result.push(`<span class="silver">${silver}</span>`);
+	if ( copper > 0 || result.length === 0 ) result.push(`<span class="copper">${copper}</span>`);
+
+	return result.join(" ");
+}
+
+function buildTooltipHTML(item) {
+	if (!item) return "Item not found";
+
+	// Map quality numbers to CSS classes or colors
+	const qualityColors = {
+		0: '#9d9d9d', // Poor
+		1: '#ffffff', // Common
+		2: '#1eff00', // Uncommon
+		3: '#0070dd', // Rare
+		4: '#a335ee', // Epic
+		5: '#ff8000', // Legendary
+		7: '#e6cc80'  // Heirloom (your example is 7)
+	};
+
+	const color = qualityColors[item.Quality] || '#fff';
+
+	let html = `<div style="min-width: 200px; font-family: sans-serif; font-size: 13px; line-height: 1.4;">`;
+
+	// Header: Name
+	html += `<div style="color: ${color}; font-size: 16px; font-weight: bold;">${item.name}</div>`;
+
+	if ( item.ItemSetInfo && item.ItemSetInfo.base ) {
+		let tier = '?';
+		for (let setBaseName in tierMap) {
+			// Create a case-insensitive regex for the base set name
+			let regex = new RegExp(setBaseName, "i");
+
+			if ( regex.test(item.ItemSetInfo.base.name) ) {
+				tier = tierMap[setBaseName];
+			}
+		}
+		if ( tier == 7 && item.ItemLevel < 100 ) tier = 3;
+		let heroic = item.is_heroic !== 0 ? ' Heroic' : '';
+		html += `<div style="color: #00ff00;">Tier ${tier}${heroic}</div>`;
+	} else if ( item.is_heroic != 0 ) html += `<div style="color: #00ff00;">Heroic</div>`;
+
+	// Item Level
+	if (item.ItemLevel > 0) {
+		html += `<div style="color: #ffd100;">Item Level ${item.ItemLevel}</div>`;
+	}
+
+	html += `<div style="color: #ffd100;">Item ID ${item.ID}</div>`;
+
+	// Bonding (Binds to account, etc.)
+	if (item.bonding) {
+		html += `<div>${item.bonding}</div>`;
+	}
+
+	if ( item.ItemStat && item.ItemStat.length > 0 ) {
+		$.each(item.ItemStat, function(index, stat) {
+			const statName = statTypeMap[stat.type];
+
+			if ( statName && stat.value !== 0 ) {
+				const prefix = stat.value > 0 ? "+" : "";
+				const statColor = stat.type >= 31 ? "#00ff00" : "#fff";
+
+				html += `<div style="color: ${statColor};">${prefix}${stat.value} ${statName}</div>`;
+			}
+		});
+	}
+
+	if ( item.races.length > 0 ) {
+		html += `<div style="color: #fff;">Races: ${item.races}</div>`;
+	}
+
+	if ( item.classes.length > 0 ) {
+		html += `<div style="color: #fff;">Classes: ${item.classes}</div>`;
+	}
+
+	if ( item.ItemSetInfo && item.ItemSetInfo.length !== 0 && item.ItemSetInfo.base && item.ItemSetInfo.base.length !== 0 ) {
+		let total = item.ItemSetInfo.base.Items.length;
+
+		$.each(itemsData, function(key, dataItem) {
+			if ( dataItem.ItemSetInfo && dataItem.ItemSetInfo.base ) {
+				if ( dataItem.ItemSetInfo.base.name === item.ItemSetInfo.base.name ) {
+					$.each(item.ItemSetInfo.base.Items, function(a, setPiece) {
+						if ( setPiece.invType === dataItem.InventoryType ) {
+							setPiece.name = dataItem.name;
+							setPiece.have = true;
+						}
+					});
+				}
+			}
+		});
+		let count = item.ItemSetInfo.base.Items.filter(i => i.have).length;
+
+		html += `<div class="mt-2 fw-bold mb-2" style="color: #edd991;">${item.ItemSetInfo.base.name} (${count}/${total})</div>`;
+
+		$.each(item.ItemSetInfo.base.Items, function(a,b) {
+			const bold = b.have ? 'fw-bold' : '';
+			const beige = b.have ? '#edd991' : '#cccccc';
+			html += `<div class="${bold}" style="color: ${beige};">${b.name}</div>`;
+		});
+
+		html += '<div class="mt-2">';
+		$.each(item.ItemSetInfo.base.Spells, function(a,b) {
+			const green = count >= b.threshold ? '#00ff00' : '#cccccc';
+			html += `<div style="color: ${green}">${b.spell}</div>`;
+		});
+		html += '</div>';
+		// html += item.itemsetInfo;
+	}
+
+	// Spells / Description (The "Use" text)
+	if (item.SpellId && item.SpellId[0]) {
+		// Replace newlines with <br> for HTML
+		const spellText = item.SpellId[0].replace(/\n/g, '<br>');
+		let used = "";
+		if ( item.InventoryType == 12 ) used = item.UsedProprerty !== 0 ? 'Use: ' : 'Equip: ';
+
+		html += `<div style="color: #00ff00; margin-top: 8px;">${used}${spellText}</div>`;
+	}
+
+	// Requirements
+	if (item.RequiredLevel > 0) {
+		html += `<div style="margin-top: 4px;">Requires Level ${item.RequiredLevel}</div>`;
+	}
+
+	if (item.RequiredReputationFaction) {
+		html += `<div style="color: #fff;">Requires ${repFactionMap[item.RequiredReputationFaction]} ${reputationMap[item.RequiredReputationRank]}</div>`;
+	}
+
+	if ( item.BuyPrice > 0 ) {
+		html += '<div>Buy: ' + formatWoWMoney(item.BuyPrice) + '</div>';
+	}
+
+	if ( item.SellPrice > 0 ) {
+		html += '<div>Sell: ' + formatWoWMoney(item.SellPrice) + '</div>';
+	}
+
+	html += `</div>`;
+	return html;
+}
+
+async function getItemTooltips(realmName, items) {
 	$.ajax({
 		url: 'api.php',
 		type: 'POST',
+		data: {
+			url: 'item-tooltip',
+			params: {
+				r: realmName,
+				e: items
+			}
+		},
+		dataType: 'json',
+		success: function(data) {
+			if ( data.success ) {
+				itemsData = data.response;
+				$.each(itemsData, function(a,b) {
+					if ( b.Quality ) {
+						$('.item-icon[data-id=' + a + ']').addClass('border-quality-' + b.Quality);
+					}
+				});
+			} else {
+				console.error("API Error: " + data.errorstring);
+			}
+		},
+		error: function(xhr) {
+			console.error("Connection Error: " + xhr.status);
+		}
+	});
+}
+
+async function getItemTooltip(realmName, ItemID) {
+	$.ajax({
+		url: 'api.php',
+		type: 'POST',
+		data: {
+			url: 'item-tooltip',
+			params: {
+				r: realmName,
+				e: ItemID
+			}
+		},
+		dataType: 'json',
+		success: function(data) {
+			if ( data.success ) {
+				let text = '<div class="fw-bold">' + data.response.name + '</div>';
+
+				$('#tooltip').html(text);
+			} else {
+				console.error("API Error: " + data.errorstring);
+			}
+		},
+		error: function(xhr) {
+			console.error("Connection Error: " + xhr.status);
+		}
+	});
+}
+
+async function getCharacterItems(realmName, characterName) {
+	/*
+	try {
+		$('.overlay').removeClass('d-none').addClass('d-flex');
+
+		const data = await $.ajax({
+			url: 'api.php',
+			type: 'POST',
+			data: {
+				url: 'character-sheet',
+				params: {
+					r: realmName,
+					n: characterName
+				}
+			},
+			dataType: 'json'
+		});
+
+		if ( data.success ) {
+			const gearList = data.response.characterItems;
+			const name = data.response.tname !== '' ? data.response.tname : data.response.name;
+
+			$('h2').text(`${name} <${data.response.guildName}`);
+			$('#playerData').text(`Level ${data.response.level} ${genderMap[data.response.gender]} ${raceMap[data.response.race]} ${classMap[data.response.class]}`);
+
+			$('#gearTable tbody').empty();
+
+			for ( const item of gearList ) {
+				if ( item.entry === 0 ) continue;
+
+				const gemPromises = item.gems.map(gem =>
+					$.ajax({
+						url: 'api.php',
+						type: 'POST',
+						data: {
+							url: 'item-tooltip',
+							params: {
+								r: realmName,
+								e: gem.id
+							}
+						},
+						dataType: 'json'
+					}).catch(() => ({ success: false })));
+				const gemDetails = await Promise.all(gemPromises);
+
+				let gems = '';
+				gemDetails.forEach((res, i) => {
+					const gemData = item.gems[i];
+					const rarity = res.success ? res.response.rarity : '1';
+					gems += `<img src="image.php?name=${gemData.icon}" class="wow-icon ms-${i} border-quality-${rarity}">`;
+				});
+				$('#playerData').text(`Level ${data.response.level} ${genderMap[data.response.gender]} ${raceMap[data.response.race]} ${classMap[data.response.class]}`);
+			}
+			$('#gearTable table').append(`<tfoot><tr><th colspan="4" class="text-end">Total</th><th>${data.response.avgitemlevel}</th><th>${data.response.gearscore_335}</th></tr>`);
+		}
+	} catch (e) {
+		console.error("Critical Flow Error: ", e);
+	} finally {
+		$('.overlay').addClass('d-none').removeClass('d-flex');
+	}
+	*/
+
+	$.ajax({
+		url: 'api.php',
+		type: 'POST',
+		headers: {
+			'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+		},
 		data: {
 			url: 'character-sheet',
 			params: {
@@ -95,18 +451,31 @@ async function getCharacterItems(realmName, characterName) {
 		success: function(data) {
 			if ( data.success ) {
 				const gearList = data.response.characterItems;
-				const name = data.response.tname ?? data.response.name
+				const name = data.response.tname !== '' ? data.response.tname : data.response.name;
 
 				$('h2').text(`${name} <${data.response.guildName}>`);
 				$('#playerData').text(`Level ${data.response.level} ${genderMap[data.response.gender]} ${raceMap[data.response.race]} ${classMap[data.response.class]}`);
 
 				$.each(gearList, function(index, item) {
+					let gems = '';
+					$.each(item.gems, function(i, gem) {
+						gems += `<img src="image.php?name=${gem.icon}" class="wow-icon item-icon ms-${i}" data-id="${gem.id}">`;
+						if ( !items.includes(gem.id) ) items.push(gem.id);
+					});
+
+					let enchant = '';
+					if ( item.ench.icon ) {
+						enchant = `<img src="image.php?name=${item.ench.icon}" class="wow-icon item-icon" data-id="${item.ench.entry}">`;
+						if ( !items.includes(item.ench.entry) ) items.push(item.ench.entry);
+					}
+
 					if ( item.entry !== 0 ) {
-						$('tbody').append('<tr><td><img src="image.php?name=' + item.icon + '" class="wow-icon border-quality-' + item.rarity + '"></td><td>' + item.name + '</td><td>' + item.ilevel + '</td><td>' + item.itemscore_335 + '</td></tr>');
+						$('#gearTable').find('tbody').append('<tr><td><img src="image.php?name=' + item.icon + '" class="wow-icon item-icon border-quality-' + item.rarity + '" data-id="' + item.entry + '"></td><td>' + item.name + '</td><td>' + enchant + '</td><td>' + gems + '</td><td>' + item.ilevel + '</td><td>' + item.itemscore_335 + '</td></tr>');
+						if ( !items.includes(item.entry) ) items.push(item.entry);
 					}
 				});
 
-				$('table').append('<tfoot><tr><td>&nbsp;</td><th class="text-end">Total</th><td>' + data.response.avgitemlevel + '</td><td>' + data.response.gearscore_335 + '</td></tr></tfoot>')
+				$('#gearTable').find('table').append('<tfoot><th colspan="4" class="text-end">Total</th><th>' + data.response.avgitemlevel + '</th><th>' + data.response.gearscore_335 + '</th></tr></tfoot>')
 			} else {
 				console.error("API Error: " + data.errorstring);
 			}
@@ -116,8 +485,9 @@ async function getCharacterItems(realmName, characterName) {
 		},
 		complete: function() {
 			$('.overlay').addClass('d-none').removeClass('d-flex');
-		}
 
+			getItemTooltips(realmName, items);
+		}
 	});
 }
 
@@ -125,6 +495,9 @@ async function getCharacterReputations(realmName, characterName) {
 	$.ajax({
 		url: 'api.php',
 		type: 'POST',
+		headers: {
+			'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+		},
 		data: {
 			url: 'character-reputation',
 			params: {
@@ -139,17 +512,19 @@ async function getCharacterReputations(realmName, characterName) {
 		success: function(data) {
 			if ( data.success ) {
 				const reputationList = data.response.characterReputation;
+				/*
 				const name = data.response.tname ?? data.response.name;
 
 				$('h2').text(`${name} <${data.response.guildName}>`);
 				$('#playerData').text(`Level ${data.response.level} ${genderMap[data.response.gender]} ${raceMap[data.response.race]} ${classMap[data.response.class]}`);
+				*/
 
 				$.each(reputationList, function(index, reputation) {
 					const formattedPercent = parseFloat(reputation.standings.percent).toFixed(2);
-					$('tbody').append(`<tr data-rank="${reputation.standings.rank}" data-percent="${reputation.standings.percent}"><td title="${reputation.descr}">${reputation.name}</td><td>${reputation.standings.rank_name}</td><td>${reputation.standings.rep} / ${reputation.standings.max}</td><td><div class="progress-bar-container d-flex overflow-hidden position-relative"><span class="progress-bar fw-bold d-block bar-${reputation.standings.rank_name}" style="width: ${reputation.standings.percent}%;">&nbsp;</span><span class="position-absolute w-100 h-100 top-0 left-0 text-white text-center progress-bar-text">${formattedPercent}%</span></div></td></tr>`);
+					$('#reputationTable').find('tbody').append(`<tr data-rank="${reputation.standings.rank}" data-percent="${reputation.standings.percent}"><td title="${reputation.descr}">${reputation.name}</td><td>${reputation.standings.rank_name}</td><td>${reputation.standings.rep} / ${reputation.standings.max}</td><td><div class="progress-bar-container d-flex overflow-hidden position-relative"><span class="progress-bar fw-bold d-block bar-${reputation.standings.rank_name}" style="width: ${reputation.standings.percent}%;">&nbsp;</span><span class="position-absolute w-100 h-100 top-0 left-0 text-white text-center progress-bar-text">${formattedPercent}%</span></div></td></tr>`);
 				});
 
-				var tbody = $('tbody');
+				var tbody = $('#reputationTable').find('tbody');
 				var rows = tbody.find('tr').detach(); // Remove from DOM temporarily
 
 				rows.sort(function(a, b) {
@@ -184,6 +559,9 @@ async function getCharacterAchievements(realmName, characterName) {
 	$.ajax({
 		url: 'api.php',
 		type: 'POST',
+		headers: {
+			'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+		},
 		data: {
 			url: 'character-achievements',
 			params: {
@@ -216,6 +594,9 @@ async function getGuildMoney(realmName, guildName) {
 	$.ajax({
 		url: 'api.php',
 		type: 'POST',
+		headers: {
+			'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+		},
 		data: {
 			url: 'guild-bank-contents',
 			params: {
@@ -252,6 +633,9 @@ async function getCharacterData(realmName, characterName, faction, rank) {
 	$.ajax({
 		url: 'api.php',
 		type: 'POST',
+		headers: {
+			'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+		},
 		data: {
 			url: 'character-sheet', // Doesn't return achievement data
 			// url: 'character-achievements', // Doesn't return profession data
@@ -305,7 +689,7 @@ async function getCharacterData(realmName, characterName, faction, rank) {
 
 				getCharacterAchievements(realmName, characterName);
 
-				$('tbody').append('<tr><td>' + factionIcon + '</td><td>' + raceIcon + '<span class="d-none">' + genderMap[data.response.gender] + '</span><span class="d-none">' + raceMap[data.response.race] + '</span></td><td>' + classIcon + '<span class="d-none">' + classMap[data.response.class] + '</span></td><td><a href="https://logs.stormforge.gg/en/character/' + realmName + '/' + data.response.name + '" target="_new">' + name + '</a></td><td>' + level + '</td><td>' + ilvl + '</td><td>' + gearscore + '</td><td>' + talents + '</td><td>' + hk + '</td><td class="text-nowrap">' + professions + '</td><td>' + guildRank + '</td><td id="' + characterName + '_AchievementPoints"></td></tr>');
+				$('tbody').append('<tr><td>' + factionIcon + '</td><td>' + raceIcon + '<span class="d-none">' + genderMap[data.response.gender] + '</span><span class="d-none">' + raceMap[data.response.race] + '</span></td><td>' + classIcon + '<span class="d-none">' + classMap[data.response.class] + '</span></td><td><a href="character.php?realm=' + realmName + '&name=' + data.response.name + '">' + name + '</a></td><td>' + level + '</td><td>' + ilvl + '</td><td>' + gearscore + '</td><td>' + talents + '</td><td>' + hk + '</td><td class="text-nowrap">' + professions + '</td><td>' + guildRank + '</td><td id="' + characterName + '_AchievementPoints"></td></tr>');
 			} else {
 				console.error("API Error: " + data.errorstring);
 			}
@@ -324,6 +708,9 @@ async function getGuildData(realmName, guildName) {
 	$.ajax({
 		url: 'api.php',
 		type: 'POST',
+		headers: {
+			'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+		},
 		data: {
 			url: 'guild-info',
 			params: {
@@ -612,6 +999,32 @@ $(document).ready(function() {
 			table.append(rows[i]);
 		}
 	});
+
+	$(document).on('mouseenter', '.item-icon', function(e) {
+		$('#tooltip').css({
+			top: e.pageY + 10,
+			left: e.pageX + 10
+		}).show().text('Loading...');
+
+		let tooltip = itemsData[$(this).attr('data-id')];
+
+		$('#tooltip').html(buildTooltipHTML(tooltip));
+	});
+
+	$(document).on('mousemove', '.item-icon', function(e) {
+		$('#tooltip').css({
+			top: e.pageY + 10,
+			left: e.pageX + 10
+		});
+	});
+
+	$(document).on('mouseleave', '.item-icon', function() {
+		$('#tooltip').hide();
+	});
+
+	if ( $('#tooltip').length != 1 ) {
+		$('body').append('<div id="tooltip" style="display:none; position:absolute; background:#333; color:#fff; padding:8px; border-radius:4px; z-index:1000;">Loading...</div>');
+	}
 
 	if ( $('.overlay').length != 1 ) {
 		$('body').append('<div class="overlay position-fixed top-0 start-0 w-100 h-100 justify-content-center align-items-center d-none"><div class="content-box"><span class="loader me-2"></span>Loading...</div></div>');
