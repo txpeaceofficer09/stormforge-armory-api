@@ -22,14 +22,41 @@ $character = !empty($_REQUEST['name']) ? $_REQUEST['name'] : '';
 				</div>
 			</div>
 
-			<div class="table-responsive">
+			<div class="d-flex justify-content-end mb-4"><a class="btn btn-primary" href="javascript:void(0);" onClick="history.back();">Back</a></div>
+
+			<ul class="nav nav-tabs">
+				<li class="nav-item">
+					<a class="nav-link active" href="javascript:void(0);" data-table="#gearTable">Gear</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" href="javascript:void(0);" data-table="#reputationTable">Reputation</a>
+				</li>
+			</ul>
+
+			<div id="gearTable" class="table-responsive">
 				<table class="table table-striped">
 					<thead>
 						<tr>
 							<th>&nbsp;</th>
 							<th>Name</th>
+							<th>Enchants</th>
+							<th>Gems</th>
 							<th>iLvl</th>
 							<th>GS</th>
+						</tr>
+					</thead>
+					<tbody></tbody>
+				</table>
+			</div>
+
+			<div id="reputationTable" class="table-responsive d-none">
+				<table class="table table-striped">
+					<thead>
+						<tr>
+							<th>Name</th>
+							<th>Standing</th>
+							<th>&nbsp;</th>
+							<th>Progress</th>
 						</tr>
 					</thead>
 					<tbody></tbody>
@@ -41,6 +68,14 @@ $character = !empty($_REQUEST['name']) ? $_REQUEST['name'] : '';
 
 $(document).ready(function() {
 	getCharacterItems('<?php echo $realm; ?>', '<?php echo $character; ?>');
+	getCharacterReputations('<?php echo $realm; ?>', '<?php echo $character; ?>');
+});
+
+$('.nav-tabs .nav-link').on('click', function() {
+	$('.nav-tabs').find('.nav-link').removeClass('active');
+	$(this).addClass('active');
+	$('.table-responsive').addClass('d-none');
+	$($(this).attr('data-table')).removeClass('d-none');
 });
 
 </script>
