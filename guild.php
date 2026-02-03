@@ -52,7 +52,7 @@ $guild = !empty($_REQUEST['guild']) ? $_REQUEST['guild'] : 'Oceanica';
 							<th title="Achievement Points">Points <span>↕</span></th>
 						</tr>
 					</thead>
-					<tbody></tbody>
+					<tbody class="numbered"></tbody>
 				</table>
 			</div>
 
